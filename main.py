@@ -48,11 +48,13 @@ registered_extensions.update({i: 'archives' for i in archives_extensions})
 
 class Field:
     def __init__(self, value):
-        self.__value = None
-        self.value = value
+        if self.is_valid(value):
+            self.__value = value
+        else:
+            raise ValueError("Invalid value")
 
     def is_valid(self, value):
-        True
+        return True
 
     @property
     def value(self):
@@ -80,17 +82,38 @@ class Address(Field):
 class Birthday(Field):
 
     def is_valid(self, str_birthday):
-        pattern = r'\d{2}\.\d{2}\.\d{4}'
-        search = re.findall(pattern, value)
-        if value == search[0]:
-            day, month, year = value.split(".")
-            try:
-                new_value = datetime(day=int(day), month=int(month), year=int(year))
-                return True
-            except ValueError:
-                return False
-        else:
+        if str_birthday is None:
+            return True
+        try:
+            datetime.strptime(str_birthday, '%d-%m-%Y').date()
+            return True
+        except ValueError:
             return False
+
+        # print(str_birthday)
+        #
+        # if str_birthday is None:
+        #     return True
+        #
+        # pattern = r'\d{2}\.\d{2}\.\d{4}'
+        # search = re.findall(pattern, value)
+        #
+        # print("search", search)
+        # print(type(search))
+        #
+        # if not search:
+        #     return False
+        #
+        # if value == search[0]:
+        #     day, month, year = value.split(".")
+        #     try:
+        #         new_value = datetime(day=int(day), month=int(month), year=int(year))
+        #         return True
+        #     except ValueError:
+        #         return False
+        # else:
+        #     return False
+
 
     def __repr__(self):
         return f'{self.value.strftime("%d %m %Y")}'
@@ -111,13 +134,17 @@ class Phone(Field):
 class Email(Field):
 
     def is_valid(self, email):
-        True
+        if email is None:
+            return True
+
+        pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
 
 
 class Record:
     def __init__(self, name, phone=None, birthday=None, email=None, address=None):
         self.name = Name(name)
-        self.phones = []
+        self.phones = [Phone(phone)]
         self.birthday = Birthday(birthday)  # if birthday else None
         self.email = Email(email)
         self.address = Address(address)
@@ -167,7 +194,7 @@ class Record:
 
 
 class AddressBook(UserDict):
-    def __iter__(self, n):
+    def __iter__(self, n=3):
         self.n = n
         self.count = 0
         return self
@@ -304,7 +331,7 @@ def func_help():
 def parser(user_input: str):
     COMMANDS = {
         "Hello": func_hello,
-        "Add ": func_add,
+        "Add ": func_add_name_phone,
         "Change ": func_change,
         "Phone ": func_search,
         "Show All": func_show_all,
@@ -325,15 +352,30 @@ def parser(user_input: str):
 
 
 @input_error
-def func_add(*args):
-    print(*args)
-    name = args[0]
-    record = Record(name)
-    phone_numbers = args[1:]
-    for phone_number in phone_numbers:
-        record.add_phone(phone_number)
-    address_book.add_record(record)
-    return "Info saved successfully."
+def func_add_name_phone(name: str, phone):
+    print("func_add")
+    print(name)
+    print(phone)
+
+    if name not in address_book:
+        record = Record(name)
+    else:
+        record = address_book.find(name)
+
+    ph = Phone(phone)
+    if ph.is_valid(phone):
+        record.add_phone(phone)
+        address_book.add_record(record)
+    return f"Contact '{name}' with phone number '{phone}' added successfully."
+
+    # print(*args)
+    # name = args[0]
+    # record = Record(name)
+    # phone_numbers = args[1:]
+    # for phone_number in phone_numbers:
+    #     record.add_phone(phone_number)
+    # address_book.add_record(record)
+    # return "Info saved successfully."
 
 
 @input_error
@@ -368,6 +410,7 @@ def func_search(*args):
 
 @input_error
 def func_show_all(*args):
+
     if not address_book:
         return "No contacts available."
 
@@ -375,7 +418,6 @@ def func_show_all(*args):
     for name, values in address_book.items():
         result += f"{name}: {values}\n"
     return result
-
 
 
 @input_error
@@ -526,6 +568,17 @@ def main():
     # load data from disk if data is available
     address_book.load_data_from_disk()
 
+    record = Record("Jack", "0987654321", "01-12-1990", "jack123@gmail.com", "st. KKK 59")
+    address_book.add_record(record)
+
+    print(address_book)
+
+    # self.name = Name(name)
+    # self.phones = []
+    # self.birthday = Birthday(birthday)  # if birthday else None
+    # self.email = Email(email)
+    # self.address = Address(address)
+
     while True:
         user_input = input('Please, enter the valid command: ')
 
@@ -535,6 +588,8 @@ def main():
             break
         else:
             handler, arguments = parser(user_input)
+            print(handler)
+            print(arguments)
             print(handler(*arguments))
 
 
