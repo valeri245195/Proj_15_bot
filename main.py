@@ -243,7 +243,7 @@ def func_search_contacts(*args):
 
 @input_error
 def is_valid_phone(phone):
-    pattern = '\d{10}'
+    pattern = r'\d{10}'
     searcher = re.findall(pattern, str(phone))
     phone = searcher[0]
     if phone == searcher[0]:
@@ -254,7 +254,7 @@ def is_valid_phone(phone):
 
 @input_error
 def is_valid_birthday(value):
-    pattern = '\d{2}\.\d{2}\.\d{4}'
+    pattern = r'\d{2}\.\d{2}\.\d{4}'
     search = re.findall(pattern,value)
     if value == search[0]:
         day, month, year = value.split(".")
@@ -332,6 +332,8 @@ def func_delete(*args):
         return f"User {name} has been deleted from the phone book"
     else:
         return f'User {name} is not in the address book'
+
+
 
 
 @input_error
@@ -490,6 +492,9 @@ address_book = AddressBook()
 
 
 def main():
+    djgjsdkgskdgsdg
+    dgsdgsdsdgdg
+
     print(func_help())
 
     # load data from disk if data is available
