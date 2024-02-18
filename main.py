@@ -334,6 +334,8 @@ def func_delete(*args):
         return f'User {name} is not in the address book'
 
 
+
+
 @input_error
 def func_search(*args):
     name = args[0]
@@ -490,6 +492,9 @@ address_book = AddressBook()
 
 
 def main():
+    djgjsdkgskdgsdg
+    dgsdgsdsdgdg
+
     print(func_help())
 
     # load data from disk if data is available
