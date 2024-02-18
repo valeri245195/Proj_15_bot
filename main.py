@@ -1,5 +1,5 @@
 import re
-import sys
+
 import shutil
 from pathlib import Path
 import pickle as p
@@ -329,9 +329,6 @@ def parser(user_input: str):
         "Delete ": func_delete,
         "Search ": func_search_contacts,
         "Sort ": do_sort_folder,
-        "Add note ": add_note,
-        "View notes ": view_notes,
-        "Search tag": search_by_tag
     }
 
     user_input = user_input.title()
@@ -343,7 +340,7 @@ def parser(user_input: str):
 
 
 @input_error
-def func_add(*args):
+def func_add(*args): # function for add name and phone
     name = args[0]
     record = Record(name)
     phone_numbers = args[1:]
@@ -354,7 +351,7 @@ def func_add(*args):
 
 
 @input_error
-def func_change(*args):
+def func_change(*args): # func for change pfone
     for k, v in address_book.items():
         if k == args[0]:
             rec = address_book[args[0]]
@@ -376,7 +373,7 @@ def func_delete(*args):
 
 
 @input_error
-def func_search(*args):
+def func_search(*args): # шукає інформацію про користувачів за декілька символів
     name = args[0]
     record = address_book.find(name)
     if record:
