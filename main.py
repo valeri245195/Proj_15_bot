@@ -368,7 +368,14 @@ def func_search(*args):
 
 @input_error
 def func_show_all(*args):
-    return str(address_book)
+    if not address_book:
+        return "No contacts available."
+
+    result = "All contacts:\n"
+    for name, values in address_book.items():
+        result += f"{name}: {values}\n"
+    return result
+
 
 
 @input_error
