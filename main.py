@@ -229,6 +229,42 @@ def input_error(func):
     return inner
 
 
+def add_note():
+    title = input("Введіть заголовок нотатки: ")
+    content = input("Введіть текст нотатки: ")
+    tags = input("Введіть теги (розділіть їх комами): ").split(', ')
+
+    note = {'title': title, 'content': content, 'tags': tags}
+    notes.append(note)
+    print("Нотатка успішно додана!")
+
+
+def view_notes():
+    if not notes:
+        print("Немає доступних нотаток.")
+        return
+
+    for i, note in enumerate(notes):
+        print(f"\nНотатка {i + 1}:")
+        print(f"Заголовок: {note['title']}")
+        print(f"Текст: {note['content']}")
+        print(f"Теги: {', '.join(note['tags'])}")
+
+
+def search_by_tag():
+    tag_to_search = input("Введіть тег для пошуку: ")
+    matching_notes = [note for note in notes if tag_to_search.lower() in map(str.lower, note['tags'])]
+
+    if matching_notes:
+        print(f"\nЗнайдені нотатки за тегом '{tag_to_search}':")
+        for i, note in enumerate(matching_notes):
+            print(f"\nНотатка {i + 1}:")
+            print(f"Заголовок: {note['title']}")
+            print(f"Текст: {note['content']}")
+            print(f"Теги: {', '.join(note['tags'])}")
+    else:
+        print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
+
 @input_error
 def func_search_contacts(*args):
     query = args[0]
@@ -292,7 +328,10 @@ def parser(user_input: str):
         "Show All": func_show_all,
         "Delete ": func_delete,
         "Search ": func_search_contacts,
-        "Sort ": do_sort_folder
+        "Sort ": do_sort_folder,
+        "Add note ": add_note,
+        "View notes ": view_notes,
+        "Search tag": search_by_tag
     }
 
     user_input = user_input.title()
