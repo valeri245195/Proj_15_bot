@@ -492,8 +492,6 @@ address_book = AddressBook()
 
 
 def main():
-    djgjsdkgskdgsdg
-    dgsdgsdsdgdg
 
     print(func_help())
 
