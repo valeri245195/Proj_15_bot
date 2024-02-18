@@ -48,94 +48,79 @@ registered_extensions.update({i: 'archives' for i in archives_extensions})
 
 class Field:
     def __init__(self, value):
+        self.__value = None
         self.value = value
 
+    def is_valid(self, value):
+        True
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        if self.is_valid(value):
+            self.__value = value
+        else:
+            raise ValueError("Invalid value")
+
     def __str__(self):
-        return str(self.value)
+        return str(self.__value)
+
+
+class Name(Field):
+    pass
+
+
+class Address(Field):
+    pass
 
 
 class Birthday(Field):
 
     def is_valid(self, str_birthday):
-        if str_birthday is None:
-            return True
-        try:
-            datetime.strptime(str_birthday, '%Y-%m-%d').date()
-            return True
-        except ValueError:
+        pattern = r'\d{2}\.\d{2}\.\d{4}'
+        search = re.findall(pattern, value)
+        if value == search[0]:
+            day, month, year = value.split(".")
+            try:
+                new_value = datetime(day=int(day), month=int(month), year=int(year))
+                return True
+            except ValueError:
+                return False
+        else:
             return False
 
-    def __init__(self, value):
-        self.__value = None
-        self.value = value
-
-    @property
-    def value(self):
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        if is_valid_birthday(value):
-            day, month, year = value.split(".")
-            new_value = datetime(day=int(day), month=int(month), year=int(year))
-            self.__value = new_value
-        else:
-            raise ValueError
-
     def __repr__(self):
-        return f'{self.value.strftime("%d %B %Y")}'
-
-
-class Name(Field):
-    def __init__(self, value) -> None:
-        self.__value = None
-        self.value = value
-
-    @property
-    def value(self):
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        self.__value = value
+        return f'{self.value.strftime("%d %m %Y")}'
 
 
 class Phone(Field):
-    def __init__(self, value):
-        self.__value = None
-        self.value = value
 
-    @property
-    def value(self):
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        if is_valid_phone(value) and value.isdigit() and len(value) == 10:
-            self.__value = value
+    def is_valid(self, phone):
+        pattern = r'\d{10}'
+        searcher = re.findall(pattern, str(phone))
+        phone = searcher[0]
+        if phone == searcher[0]:
+            return True
         else:
-            raise ValueError
-
-    def __repr__(self):
-        return f'{self.value}'
+            return False
 
 
 class Email(Field):
 
-
-
-    def is_valid_email(self, email):
-        pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}'
-        return re.match(pattern, email) is not None
+    def is_valid(self, email):
+        True
 
 
 class Record:
-    def __init__(self, name, phone=None, birthday=None):
+    def __init__(self, name, phone=None, birthday=None, email=None, address=None):
         self.name = Name(name)
         self.phones = []
-        self.birthday = Birthday(birthday) if birthday else None
-        if phone is not None:
-            self.phones.append(Phone(phone))
+        self.birthday = Birthday(birthday)  # if birthday else None
+        self.email = Email(email)
+        self.address = Address(address)
 
     def days_to_birthday(self, current_date=None):
         if not current_date:
@@ -166,7 +151,7 @@ class Record:
         for i in self.phones:
             if i.value == old_phone:
                 i.value = new_phone
-                return f'Number {old_phone} from {self.name}`s list changed to {new_phone}'
+                return f'Number {old_phone} from {self.name}\'s list changed to {new_phone}'
             else:
                 raise ValueError(f'phone {old_phone} is not find for name {self.name}')
         return f'Number {old_phone} is not exist in {self.name} list'
@@ -301,32 +286,6 @@ def func_search_contacts(*args):
 
 
 @input_error
-def is_valid_phone(phone):
-    pattern = r'\d{10}'
-    searcher = re.findall(pattern, str(phone))
-    phone = searcher[0]
-    if phone == searcher[0]:
-        return True
-    else:
-        return False
-
-
-@input_error
-def is_valid_birthday(value):
-    pattern = r'\d{2}\.\d{2}\.\d{4}'
-    search = re.findall(pattern, value)
-    if value == search[0]:
-        day, month, year = value.split(".")
-        try:
-            new_value = datetime(day=int(day), month=int(month), year=int(year))
-            return True
-        except ValueError:
-            return False
-    else:
-        return False
-
-
-@input_error
 def func_help():
     return ('Hi! If you want to start working, just enter "hello"\n' +
             'Number phone in 10 numbers, for example 0001230001\n' +
@@ -367,6 +326,7 @@ def parser(user_input: str):
 
 @input_error
 def func_add(*args):
+    print(*args)
     name = args[0]
     record = Record(name)
     phone_numbers = args[1:]
