@@ -7,8 +7,10 @@ from datetime import datetime
 from collections import UserDict
 
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
-TRANSLATION = ("a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
-               "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
+TRANSLATION = (
+    "a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t",
+    "u",
+    "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
 TRANS = {}
 for key, value in zip(UKRAINIAN_SYMBOLS, TRANSLATION):
     TRANS[ord(key)] = value
@@ -31,9 +33,9 @@ documents_extensions = ['DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX']
 archives_extensions = ['ZIP', 'GZ', 'TAR']
 
 list_of_all_extensions = (
-    image_extensions + video_extensions +
-    audio_extensions + documents_extensions +
-    archives_extensions
+        image_extensions + video_extensions +
+        audio_extensions + documents_extensions +
+        archives_extensions
 )
 
 registered_extensions = dict()
@@ -42,6 +44,7 @@ registered_extensions.update({i: 'video' for i in video_extensions})
 registered_extensions.update({i: 'audio' for i in audio_extensions})
 registered_extensions.update({i: 'documents' for i in documents_extensions})
 registered_extensions.update({i: 'archives' for i in archives_extensions})
+
 
 class Field:
     def __init__(self, value):
@@ -52,6 +55,16 @@ class Field:
 
 
 class Birthday(Field):
+
+    def is_valid(self, str_birthday):
+        if str_birthday is None:
+            return True
+        try:
+            datetime.strptime(str_birthday, '%Y-%m-%d').date()
+            return True
+        except ValueError:
+            return False
+
     def __init__(self, value):
         self.__value = None
         self.value = value
@@ -105,6 +118,15 @@ class Phone(Field):
 
     def __repr__(self):
         return f'{self.value}'
+
+
+class Email(Field):
+
+
+
+    def is_valid_email(self, email):
+        pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}'
+        return re.match(pattern, email) is not None
 
 
 class Record:
@@ -265,6 +287,7 @@ def search_by_tag():
     else:
         print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
 
+
 @input_error
 def func_search_contacts(*args):
     query = args[0]
@@ -274,7 +297,7 @@ def func_search_contacts(*args):
         result = '\n'.join(str(record) for record in matching_contacts)
         return f'Matching contacts: \n{result}'
     else:
-        return  f'No contacts found for query: {query}'
+        return f'No contacts found for query: {query}'
 
 
 @input_error
@@ -291,7 +314,7 @@ def is_valid_phone(phone):
 @input_error
 def is_valid_birthday(value):
     pattern = r'\d{2}\.\d{2}\.\d{4}'
-    search = re.findall(pattern,value)
+    search = re.findall(pattern, value)
     if value == search[0]:
         day, month, year = value.split(".")
         try:
@@ -373,8 +396,6 @@ def func_delete(*args):
         return f'User {name} is not in the address book'
 
 
-
-
 @input_error
 def func_search(*args):
     name = args[0]
@@ -411,6 +432,7 @@ def normalize(name: str) -> str:
     new_name = re.sub(r'\W', '_', new_name)
     return f"{new_name}.{'.'.join(extension)}"
 
+
 def get_extensions(file_name):
     return Path(file_name).suffix[1:].upper()
 
@@ -424,7 +446,7 @@ def scan(folder):
             continue
 
         extension = get_extensions(file_name=item.name)
-        new_name = folder/item.name
+        new_name = folder / item.name
         if not extension:
             other.append(new_name)
         else:
@@ -527,13 +549,11 @@ def do_sort_folder(*args):
     print(f"unknowns extensions: {[normalize(ext) for ext in unknown]}")
     print(f"unique extensions: {[normalize(ext) for ext in extensions]}")
 
+
 address_book = AddressBook()
 
 
 def main():
-    djgjsdkgskdgsdg
-    dgsdgsdsdgdg
-
     print(func_help())
 
     # load data from disk if data is available
