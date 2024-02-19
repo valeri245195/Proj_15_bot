@@ -94,7 +94,7 @@ class Birthday(Field):
     def value(self, value):
         if is_valid_birthday(value):
             day, month, year = value.split(".")
-            new_value = datetime(day=int(day), month=int(month), year=int(year))
+            new_value = datetime(day=int(day), month=int(month), year=int(year)).date()
             self.__value = new_value
         else:
             raise ValueError
@@ -139,6 +139,7 @@ class Phone(Field):
 
 class Email(Field2):
     def is_valid(self, email):
+        return True
         if email is None:
             return True
 
@@ -153,7 +154,7 @@ class Address(Field2):
 class Record:
     def __init__(self, name, phone=None, birthday=None, email=None, address=None):
         self.name = Name(name)
-        self.phones = [Phone(phone)]
+        self.phones = [Phone(phone)] if phone else []
         self.birthday = Birthday(birthday) if birthday else None
         # if phone is not None:
         #     self.phones.append(Phone(phone))
@@ -201,7 +202,8 @@ class Record:
         return None
 
     def __str__(self):
-        return f"Name: {self.name.value}, phones: {', '.join(str(p) for p in self.phones)}"
+        return f"{self.name}\t{', '.join(str(p) for p in self.phones)}\t{self.birthday}\t{self.email}\t{self.address}"
+        # return f"Name: {self.name.value}, phones: {', '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
@@ -259,19 +261,28 @@ class AddressBook(UserDict):
     def __str__(self) -> str:
         return "\n".join(str(r) for r in self.data.values())
 
-
 def input_error(func):
-    def inner(*args):
+    def wrapper(*args, **kwargs):
         try:
-            return func(*args)
-        except IndexError:
-            return "Not enough params"
-        except KeyError:
-            return f"There is no contact such in phone book."
-        except ValueError:
-            return "Not enough params or wrong phone format"
+            return func(*args, **kwargs)
+        except (TypeError, KeyError, ValueError, IndexError) as e:
+            return type(e).__name__, e
+            # return f"Error: {e}"
 
-    return inner
+    return wrapper
+
+# def input_error(func):
+#     def inner(*args):
+#         try:
+#             return func(*args)
+#         except IndexError:
+#             return "Not enough params"
+#         except KeyError:
+#             return f"There is no contact such in phone book."
+#         except ValueError:
+#             return "Not enough params or wrong phone format"
+#
+#     return inner
 
 
 def add_note():
@@ -355,7 +366,7 @@ def func_help():
             'Number phone in 10 numbers, for example 0001230001\n' +
             'The representation of all commands looks as follows:\n' +
             '"hello" - start work with bot\n' +
-            '"add" name phone\n' +
+            '"add" name phone1 phone2 ...\n' +
             '"change" name old_phone new_phone\n' +
             '"phone" name\n' +
             '"show all" - for show all information\n' +
@@ -367,8 +378,11 @@ def func_help():
 @input_error
 def parser(user_input: str):
     COMMANDS = {
+        "Help": func_help,
         "Hello": func_hello,
-        "Add ": func_add,
+        "Add Phone": func_add,
+        "Add Email": func_add_email,
+        "Add Adr": func_add_address,
         "Change ": func_change,
         "Phone ": func_search,
         "Show All": func_show_all,
@@ -380,18 +394,41 @@ def parser(user_input: str):
     user_input = user_input.title()
 
     for kw, command in COMMANDS.items():
-        if user_input.startswith(kw):
-            return command, user_input[len(kw):].strip().split()
+        if user_input.startswith(kw.title()):
+            args = user_input[len(kw):].strip().split()
+            print("1args: ", args)
+            return command, args
     return func_unknown_command, []
 
 
 @input_error
-def func_add(*args):  # function for add name and phone
-    name = args[0]
-    record = Record(name)
-    phone_numbers = args[1:]
-    for phone_number in phone_numbers:
+def func_add(name, phone_numbers):  # function for add name and phone
+    print("111111111111111111111")
+    print(name)
+    print(phone_numbers)
+    print(type(phone_numbers))
+    # print(*args)
+    if not address_book.find(name):
+        record = Record(name)
+    else:
+        record = address_book.find(name)
+
+
+    for phone_number in list(phone_numbers):
         record.add_phone(phone_number)
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+@input_error
+def func_add_email(name, email):  # function for add email
+    record = Record(name, email=email)
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+@input_error
+def func_add_address(name, address):  # function for add email
+    print(address)
+    record = Record(name, address=address)
     address_book.add_record(record)
     return "Info saved successfully."
 
@@ -428,14 +465,9 @@ def func_search(*args):  # шукає інформацію про користу
 
 @input_error
 def func_show_all(*args):
-    # return str(address_book)
     if not address_book:
         return "No contacts available."
-
-    result = "All contacts:\n"
-    for name, phone in address_book.items():
-        result += f"{name}: {phone}\n"
-    return result
+    return "All contacts:\n" + str(address_book)
 
 
 @input_error
@@ -579,19 +611,26 @@ def do_sort_folder(*args):
 
 address_book = AddressBook()
 
-
+@input_error
 def main():
     print(func_help())
 
     # load data from disk if data is available
     address_book.load_data_from_disk()
 
-    record = Record("Jack", "0987654321", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
+    r1 = Record("Jack", "0987654333", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
+    record = Record("Joo", "0987654321", "15.01.1990", None, "st. Qwerty 444")
+    address_book.add_record(r1)
     address_book.add_record(record)
     print("record", record)
     print(type(record))
     print("address_book", address_book)
     print(type(address_book))
+
+    print("--------------------------")
+    for val in address_book.values():
+        print(val)
+    print("--------------------------")
 
     while True:
         user_input = input('Please, enter the valid command: ')
@@ -602,6 +641,7 @@ def main():
             break
         else:
             handler, arguments = parser(user_input)
+            print("arguments: ", arguments)
             print(handler(*arguments))
 
 
