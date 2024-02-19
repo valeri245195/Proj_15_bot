@@ -356,6 +356,61 @@ def is_valid_birthday(value):
     else:
         return False
 
+@input_error
+def func_change_info(name, info_type, *args):
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        old_phone, new_phone = args
+        return record.edit_phone(old_phone, new_phone)
+    
+    elif info_type.lower() == 'email':
+        new_email = args[0]
+        record.email = new_email
+        address_book.add_record(record)
+        return f"Email for '{name}' changed to '{new_email}'."
+    
+    elif info_type.lower() == 'birthday':
+        new_birthday = args[0]
+        record.birthday.value = new_birthday
+        address_book.add_record(record)
+        return f"Birthday for '{name}' changed to '{new_birthday}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+        
+@input_error
+def func_delete_info(name, info_type, *args):
+    
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        phone_to_delete = ' '.join(args) 
+        print("Phone to delete:", phone_to_delete)
+        try:
+            record.remove_phone(phone_to_delete)
+            address_book.add_record(record)
+            return f"Phone number '{phone_to_delete}' deleted for '{name}'."
+        except ValueError:
+            return f"Phone number '{phone_to_delete}' not found for '{name}'."
+    
+    elif info_type.lower() == 'email':
+        record.email = None
+        address_book.add_record(record)
+        return f"Email deleted for '{name}'."
+    
+    elif info_type.lower() == 'birthday':
+        record.birthday = None
+        address_book.add_record(record)
+        return f"Birthday deleted for '{name}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+
 
 @input_error
 def func_help():
@@ -384,10 +439,10 @@ def parser(user_input: str):
         "Add Email": func_add_email,
         "Add Adr": func_add_address,
         "Add brd": func_add_birthday,
-        "Change ": func_change,
+        "Change": func_change_info,
         "Phone ": func_search,
         "Show All": func_show_all,
-        "Delete ": func_delete,
+        "Delete": func_delete_info,
         "Search ": func_search_contacts,
         "Sort ": do_sort_folder,
     }
