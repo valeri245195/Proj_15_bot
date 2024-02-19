@@ -153,10 +153,10 @@ class Address(Field2):
 class Record:
     def __init__(self, name, phone=None, birthday=None, email=None, address=None):
         self.name = Name(name)
-        self.phones = []
+        self.phones = [Phone(phone)]
         self.birthday = Birthday(birthday) if birthday else None
-        if phone is not None:
-            self.phones.append(Phone(phone))
+        # if phone is not None:
+        #     self.phones.append(Phone(phone))
         self.email = Email(email)
         self.address = Address(address)
 
@@ -588,9 +588,9 @@ def main():
 
     record = Record("Jack", "0987654321", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
     address_book.add_record(record)
-    print(record)
+    print("record", record)
     print(type(record))
-    print(address_book)
+    print("address_book", address_book)
     print(type(address_book))
 
     while True:
