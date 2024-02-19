@@ -93,7 +93,7 @@ class Birthday(Field):
             new_value = datetime(day=int(day), month=int(month), year=int(year)).date()
             self.__value = new_value
         else:
-            raise ValueError
+            raise ValueError("Invalid value birthday")
 
     def __repr__(self):
         return f'{self.value.strftime("%d %B %Y")}'
@@ -363,7 +363,10 @@ def func_help():
             'Number phone in 10 numbers, for example 0001230001\n' +
             'The representation of all commands looks as follows:\n' +
             '"hello" - start work with bot\n' +
-            '"add" name phone1 phone2 ...\n' +
+            '"add n" name phone1 phone2 ...\n' +
+            '"add email" name example@mail.com ...\n' +
+            '"add adr" name West 141 st. ...\n' +
+            '"add brd" name 15.12.1990 ...\n' +
             '"change" name old_phone new_phone\n' +
             '"phone" name\n' +
             '"show all" - for show all information\n' +
@@ -380,6 +383,7 @@ def parser(user_input: str):
         "Add n": func_add_name_phones,
         "Add Email": func_add_email,
         "Add Adr": func_add_address,
+        "Add brd": func_add_birthday,
         "Change ": func_change,
         "Phone ": func_search,
         "Show All": func_show_all,
@@ -423,10 +427,25 @@ def func_add_email(name, email):  # function for add email
     return "Info saved successfully."
 
 
+def func_add_birthday(name, birthday):
+    if not address_book.find(name):
+        record = Record(name, birthday=birthday)
+    else:
+        record = address_book.find(name)
+        record.birthday = Birthday(birthday)
+
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+
 @input_error
-def func_add_address(name, address):  # function for add email
-    print(address)
-    record = Record(name, address=address)
+def func_add_address(name, *address):  # function for add address
+    if not address_book.find(name):
+        record = Record(name, address=address)
+    else:
+        record = address_book.find(name)
+        record.address = list(address)
+
     address_book.add_record(record)
     return "Info saved successfully."
 
@@ -621,15 +640,6 @@ def main():
     record = Record("Joo", "0987654321", "15.01.1990", None, "st. Qwerty 444")
     address_book.add_record(r1)
     address_book.add_record(record)
-    print("record", record)
-    print(type(record))
-    print("address_book", address_book)
-    print(type(address_book))
-
-    print("--------------------------")
-    for val in address_book.values():
-        print(val)
-    print("--------------------------")
 
     while True:
         user_input = input('Please, enter the valid command: ')
@@ -640,7 +650,6 @@ def main():
             break
         else:
             handler, arguments = parser(user_input)
-            print("arguments: ", arguments)
             print(handler(*arguments))
 
 
