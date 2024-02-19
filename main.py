@@ -58,10 +58,6 @@ class Field2:
     def __init__(self, value):
         self.__value = None
         self.value = value
-        # if self.is_valid(value):
-        #     self.__value = value
-        # else:
-        #     raise ValueError("Invalid value")
 
     def is_valid(self, value):
         return True
@@ -139,7 +135,7 @@ class Phone(Field):
 
 class Email(Field2):
     def is_valid(self, email):
-        return True
+        # return True
         if email is None:
             return True
 
@@ -190,7 +186,7 @@ class Record:
         for i in self.phones:
             if i.value == old_phone:
                 i.value = new_phone
-                return f'Number {old_phone} from {self.name}`s list changed to {new_phone}'
+                return f'Number {old_phone} from {self.name}\'s list changed to {new_phone}'
             else:
                 raise ValueError(f'phone {old_phone} is not find for name {self.name}')
         return f'Number {old_phone} is not exist in {self.name} list'
@@ -203,7 +199,6 @@ class Record:
 
     def __str__(self):
         return f"{self.name}\t{', '.join(str(p) for p in self.phones)}\t{self.birthday}\t{self.email}\t{self.address}"
-        # return f"Name: {self.name.value}, phones: {', '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
@@ -261,6 +256,7 @@ class AddressBook(UserDict):
     def __str__(self) -> str:
         return "\n".join(str(r) for r in self.data.values())
 
+
 def input_error(func):
     def wrapper(*args, **kwargs):
         try:
@@ -270,6 +266,7 @@ def input_error(func):
             # return f"Error: {e}"
 
     return wrapper
+
 
 # def input_error(func):
 #     def inner(*args):
@@ -380,7 +377,7 @@ def parser(user_input: str):
     COMMANDS = {
         "Help": func_help,
         "Hello": func_hello,
-        "Add Phone": func_add,
+        "Add n": func_add_name_phones,
         "Add Email": func_add_email,
         "Add Adr": func_add_address,
         "Change ": func_change,
@@ -402,28 +399,29 @@ def parser(user_input: str):
 
 
 @input_error
-def func_add(name, phone_numbers):  # function for add name and phone
-    print("111111111111111111111")
-    print(name)
-    print(phone_numbers)
-    print(type(phone_numbers))
-    # print(*args)
+def func_add_name_phones(name, *phone_numbers):  # function for add name and phone
     if not address_book.find(name):
         record = Record(name)
     else:
         record = address_book.find(name)
 
-
-    for phone_number in list(phone_numbers):
+    for phone_number in phone_numbers:
         record.add_phone(phone_number)
     address_book.add_record(record)
     return "Info saved successfully."
 
+
 @input_error
 def func_add_email(name, email):  # function for add email
-    record = Record(name, email=email)
+    if not address_book.find(name):
+        record = Record(name, email=email)
+    else:
+        record = address_book.find(name)
+
+    record.email = email
     address_book.add_record(record)
     return "Info saved successfully."
+
 
 @input_error
 def func_add_address(name, address):  # function for add email
@@ -610,6 +608,7 @@ def do_sort_folder(*args):
 
 
 address_book = AddressBook()
+
 
 @input_error
 def main():
