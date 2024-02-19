@@ -7,8 +7,10 @@ from datetime import datetime
 from collections import UserDict
 
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
-TRANSLATION = ("a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
-               "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
+TRANSLATION = (
+    "a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t",
+    "u",
+    "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
 TRANS = {}
 for key, value in zip(UKRAINIAN_SYMBOLS, TRANSLATION):
     TRANS[ord(key)] = value
@@ -31,9 +33,9 @@ documents_extensions = ['DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX']
 archives_extensions = ['ZIP', 'GZ', 'TAR']
 
 list_of_all_extensions = (
-    image_extensions + video_extensions +
-    audio_extensions + documents_extensions +
-    archives_extensions
+        image_extensions + video_extensions +
+        audio_extensions + documents_extensions +
+        archives_extensions
 )
 
 registered_extensions = dict()
@@ -43,12 +45,40 @@ registered_extensions.update({i: 'audio' for i in audio_extensions})
 registered_extensions.update({i: 'documents' for i in documents_extensions})
 registered_extensions.update({i: 'archives' for i in archives_extensions})
 
+
 class Field:
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return str(self.value)
+
+
+class Field2:
+    def __init__(self, value):
+        self.__value = None
+        self.value = value
+        # if self.is_valid(value):
+        #     self.__value = value
+        # else:
+        #     raise ValueError("Invalid value")
+
+    def is_valid(self, value):
+        return True
+
+    @property
+    def value(self):
+        return self.__value
+
+    @value.setter
+    def value(self, value):
+        if self.is_valid(value):
+            self.__value = value
+        else:
+            raise ValueError("Invalid value")
+
+    def __str__(self):
+        return str(self.__value)
 
 
 class Birthday(Field):
@@ -107,13 +137,28 @@ class Phone(Field):
         return f'{self.value}'
 
 
+class Email(Field2):
+    def is_valid(self, email):
+        if email is None:
+            return True
+
+        pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}'
+        return re.match(pattern, email) is not None
+
+
+class Address(Field2):
+    pass
+
+
 class Record:
-    def __init__(self, name, phone=None, birthday=None):
+    def __init__(self, name, phone=None, birthday=None, email=None, address=None):
         self.name = Name(name)
         self.phones = []
         self.birthday = Birthday(birthday) if birthday else None
         if phone is not None:
             self.phones.append(Phone(phone))
+        self.email = Email(email)
+        self.address = Address(address)
 
     def days_to_birthday(self, current_date=None):
         if not current_date:
@@ -160,7 +205,7 @@ class Record:
 
 
 class AddressBook(UserDict):
-    def __iter__(self, n):
+    def __iter__(self, n=1):
         self.n = n
         self.count = 0
         return self
@@ -265,6 +310,7 @@ def search_by_tag():
     else:
         print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
 
+
 @input_error
 def func_search_contacts(*args):
     query = args[0]
@@ -274,7 +320,7 @@ def func_search_contacts(*args):
         result = '\n'.join(str(record) for record in matching_contacts)
         return f'Matching contacts: \n{result}'
     else:
-        return  f'No contacts found for query: {query}'
+        return f'No contacts found for query: {query}'
 
 
 @input_error
@@ -291,7 +337,7 @@ def is_valid_phone(phone):
 @input_error
 def is_valid_birthday(value):
     pattern = r'\d{2}\.\d{2}\.\d{4}'
-    search = re.findall(pattern,value)
+    search = re.findall(pattern, value)
     if value == search[0]:
         day, month, year = value.split(".")
         try:
@@ -340,7 +386,7 @@ def parser(user_input: str):
 
 
 @input_error
-def func_add(*args): # function for add name and phone
+def func_add(*args):  # function for add name and phone
     name = args[0]
     record = Record(name)
     phone_numbers = args[1:]
@@ -351,7 +397,7 @@ def func_add(*args): # function for add name and phone
 
 
 @input_error
-def func_change(*args): # func for change pfone
+def func_change(*args):  # func for change pfone
     for k, v in address_book.items():
         if k == args[0]:
             rec = address_book[args[0]]
@@ -370,10 +416,8 @@ def func_delete(*args):
         return f'User {name} is not in the address book'
 
 
-
-
 @input_error
-def func_search(*args): # шукає інформацію про користувачів за декілька символів
+def func_search(*args):  # шукає інформацію про користувачів за декілька символів
     name = args[0]
     record = address_book.find(name)
     if record:
@@ -384,7 +428,14 @@ def func_search(*args): # шукає інформацію про користу�
 
 @input_error
 def func_show_all(*args):
-    return str(address_book)
+    # return str(address_book)
+    if not address_book:
+        return "No contacts available."
+
+    result = "All contacts:\n"
+    for name, phone in address_book.items():
+        result += f"{name}: {phone}\n"
+    return result
 
 
 @input_error
@@ -408,6 +459,7 @@ def normalize(name: str) -> str:
     new_name = re.sub(r'\W', '_', new_name)
     return f"{new_name}.{'.'.join(extension)}"
 
+
 def get_extensions(file_name):
     return Path(file_name).suffix[1:].upper()
 
@@ -421,7 +473,7 @@ def scan(folder):
             continue
 
         extension = get_extensions(file_name=item.name)
-        new_name = folder/item.name
+        new_name = folder / item.name
         if not extension:
             other.append(new_name)
         else:
@@ -524,15 +576,22 @@ def do_sort_folder(*args):
     print(f"unknowns extensions: {[normalize(ext) for ext in unknown]}")
     print(f"unique extensions: {[normalize(ext) for ext in extensions]}")
 
+
 address_book = AddressBook()
 
 
 def main():
-
     print(func_help())
 
     # load data from disk if data is available
     address_book.load_data_from_disk()
+
+    record = Record("Jack", "0987654321", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
+    address_book.add_record(record)
+    print(record)
+    print(type(record))
+    print(address_book)
+    print(type(address_book))
 
     while True:
         user_input = input('Please, enter the valid command: ')
