@@ -7,10 +7,8 @@ from datetime import datetime
 from collections import UserDict
 
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
-TRANSLATION = (
-    "a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t",
-    "u",
-    "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
+TRANSLATION = ("a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
+               "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
 TRANS = {}
 for key, value in zip(UKRAINIAN_SYMBOLS, TRANSLATION):
     TRANS[ord(key)] = value
@@ -33,9 +31,9 @@ documents_extensions = ['DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX']
 archives_extensions = ['ZIP', 'GZ', 'TAR']
 
 list_of_all_extensions = (
-        image_extensions + video_extensions +
-        audio_extensions + documents_extensions +
-        archives_extensions
+    image_extensions + video_extensions +
+    audio_extensions + documents_extensions +
+    archives_extensions
 )
 
 registered_extensions = dict()
@@ -45,36 +43,12 @@ registered_extensions.update({i: 'audio' for i in audio_extensions})
 registered_extensions.update({i: 'documents' for i in documents_extensions})
 registered_extensions.update({i: 'archives' for i in archives_extensions})
 
-
 class Field:
     def __init__(self, value):
         self.value = value
 
     def __str__(self):
         return str(self.value)
-
-
-class Field2:
-    def __init__(self, value):
-        self.__value = None
-        self.value = value
-
-    def is_valid(self, value):
-        return True
-
-    @property
-    def value(self):
-        return self.__value
-
-    @value.setter
-    def value(self, value):
-        if self.is_valid(value):
-            self.__value = value
-        else:
-            raise ValueError("Invalid value")
-
-    def __str__(self):
-        return str(self.__value)
 
 
 class Birthday(Field):
@@ -90,7 +64,7 @@ class Birthday(Field):
     def value(self, value):
         if is_valid_birthday(value):
             day, month, year = value.split(".")
-            new_value = datetime(day=int(day), month=int(month), year=int(year)).date()
+            new_value = datetime(day=int(day), month=int(month), year=int(year))
             self.__value = new_value
         else:
             raise ValueError
@@ -133,29 +107,13 @@ class Phone(Field):
         return f'{self.value}'
 
 
-class Email(Field2):
-    def is_valid(self, email):
-        # return True
-        if email is None:
-            return True
-
-        pattern = r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}'
-        return re.match(pattern, email) is not None
-
-
-class Address(Field2):
-    pass
-
-
 class Record:
-    def __init__(self, name, phone=None, birthday=None, email=None, address=None):
+    def __init__(self, name, phone=None, birthday=None):
         self.name = Name(name)
-        self.phones = [Phone(phone)] if phone else []
+        self.phones = []
         self.birthday = Birthday(birthday) if birthday else None
-        # if phone is not None:
-        #     self.phones.append(Phone(phone))
-        self.email = Email(email)
-        self.address = Address(address)
+        if phone is not None:
+            self.phones.append(Phone(phone))
 
     def days_to_birthday(self, current_date=None):
         if not current_date:
@@ -186,7 +144,7 @@ class Record:
         for i in self.phones:
             if i.value == old_phone:
                 i.value = new_phone
-                return f'Number {old_phone} from {self.name}\'s list changed to {new_phone}'
+                return f'Number {old_phone} from {self.name}`s list changed to {new_phone}'
             else:
                 raise ValueError(f'phone {old_phone} is not find for name {self.name}')
         return f'Number {old_phone} is not exist in {self.name} list'
@@ -198,22 +156,22 @@ class Record:
         return None
 
     def __str__(self):
-        return f"{self.name}\t{', '.join(str(p) for p in self.phones)}\t{self.birthday}\t{self.email}\t{self.address}"
+        return f"Name: {self.name.value}, phones: {', '.join(str(p) for p in self.phones)}"
 
 
 class AddressBook(UserDict):
-    # def __iter__(self, n=1):
-    #     self.n = n
-    #     self.count = 0
-    #     return self
-    #
-    # def __next__(self):
-    #     self.count += 1
-    #     if self.count > self.n:
-    #         raise StopIteration
-    #     else:
-    #         for i in self.data:
-    #             yield self.data[i]
+    def __iter__(self, n):
+        self.n = n
+        self.count = 0
+        return self
+
+    def __next__(self):
+        self.count += 1
+        if self.count > self.n:
+            raise StopIteration
+        else:
+            for i in self.data:
+                yield self.data[i]
 
     def search_contact(self, query):
         matching_contacts = list()
@@ -258,30 +216,19 @@ class AddressBook(UserDict):
 
 
 def input_error(func):
-    def wrapper(*args, **kwargs):
+    def inner(*args):
         try:
-            return func(*args, **kwargs)
-        except (TypeError, KeyError, ValueError, IndexError) as e:
-            return type(e).__name__, e
-            # return f"Error: {e}"
+            return func(*args)
+        except IndexError:
+            return "Not enough params"
+        except KeyError:
+            return f"There is no contact such in phone book."
+        except ValueError:
+            return "Not enough params or wrong phone format"
 
-    return wrapper
+    return inner
 
-
-# def input_error(func):
-#     def inner(*args):
-#         try:
-#             return func(*args)
-#         except IndexError:
-#             return "Not enough params"
-#         except KeyError:
-#             return f"There is no contact such in phone book."
-#         except ValueError:
-#             return "Not enough params or wrong phone format"
-#
-#     return inner
-
-
+notes = []
 def add_note():
     title = input("Введіть заголовок нотатки: ")
     content = input("Введіть текст нотатки: ")
@@ -318,7 +265,6 @@ def search_by_tag():
     else:
         print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
 
-
 @input_error
 def func_search_contacts(*args):
     query = args[0]
@@ -328,7 +274,7 @@ def func_search_contacts(*args):
         result = '\n'.join(str(record) for record in matching_contacts)
         return f'Matching contacts: \n{result}'
     else:
-        return f'No contacts found for query: {query}'
+        return  f'No contacts found for query: {query}'
 
 
 @input_error
@@ -345,7 +291,7 @@ def is_valid_phone(phone):
 @input_error
 def is_valid_birthday(value):
     pattern = r'\d{2}\.\d{2}\.\d{4}'
-    search = re.findall(pattern, value)
+    search = re.findall(pattern,value)
     if value == search[0]:
         day, month, year = value.split(".")
         try:
@@ -363,48 +309,46 @@ def func_help():
             'Number phone in 10 numbers, for example 0001230001\n' +
             'The representation of all commands looks as follows:\n' +
             '"hello" - start work with bot\n' +
-            '"add" name phone1 phone2 ...\n' +
+            '"add" name phone\n' +
             '"change" name old_phone new_phone\n' +
             '"phone" name\n' +
             '"show all" - for show all information\n' +
             '"good bye", "close", "exit" - for end work\n' +
             '"delete" - delete info of name\n' +
-            '"search" - command for search. Just enter "search" and something about contact like name or phone')
+            '"search" - command for search. Just enter "search" and something about contact like name or phone\n' +
+            '"create note" - command for creating note\n' +
+            '"search by tag" - command for searching note by tag\n' +
+            '"show notes" - command for show all available notes\n')
 
 
 @input_error
 def parser(user_input: str):
     COMMANDS = {
-        "Help": func_help,
         "Hello": func_hello,
-        "Add n": func_add_name_phones,
-        "Add Email": func_add_email,
-        "Add Adr": func_add_address,
+        "Add ": func_add,
         "Change ": func_change,
         "Phone ": func_search,
         "Show All": func_show_all,
         "Delete ": func_delete,
+        "Search By Tag": search_by_tag,
         "Search ": func_search_contacts,
         "Sort ": do_sort_folder,
+        "Create Note": add_note,
+        "Show Notes": view_notes,
     }
 
     user_input = user_input.title()
-
     for kw, command in COMMANDS.items():
-        if user_input.startswith(kw.title()):
-            args = user_input[len(kw):].strip().split()
-            print("1args: ", args)
-            return command, args
+        if user_input.startswith(kw):
+            return command, user_input[len(kw):].strip().split()
     return func_unknown_command, []
 
 
 @input_error
-def func_add_name_phones(name, *phone_numbers):  # function for add name and phone
-    if not address_book.find(name):
-        record = Record(name)
-    else:
-        record = address_book.find(name)
-
+def func_add(*args): # function for add name and phone
+    name = args[0]
+    record = Record(name)
+    phone_numbers = args[1:]
     for phone_number in phone_numbers:
         record.add_phone(phone_number)
     address_book.add_record(record)
@@ -412,27 +356,7 @@ def func_add_name_phones(name, *phone_numbers):  # function for add name and pho
 
 
 @input_error
-def func_add_email(name, email):  # function for add email
-    if not address_book.find(name):
-        record = Record(name, email=email)
-    else:
-        record = address_book.find(name)
-
-    record.email = email
-    address_book.add_record(record)
-    return "Info saved successfully."
-
-
-@input_error
-def func_add_address(name, address):  # function for add email
-    print(address)
-    record = Record(name, address=address)
-    address_book.add_record(record)
-    return "Info saved successfully."
-
-
-@input_error
-def func_change(*args):  # func for change pfone
+def func_change(*args): # func for change pfone
     for k, v in address_book.items():
         if k == args[0]:
             rec = address_book[args[0]]
@@ -451,8 +375,10 @@ def func_delete(*args):
         return f'User {name} is not in the address book'
 
 
+
+
 @input_error
-def func_search(*args):  # шукає інформацію про користувачів за декілька символів
+def func_search(*args): # шукає інформацію про користувачів за декілька символів
     name = args[0]
     record = address_book.find(name)
     if record:
@@ -463,9 +389,7 @@ def func_search(*args):  # шукає інформацію про користу
 
 @input_error
 def func_show_all(*args):
-    if not address_book:
-        return "No contacts available."
-    return "All contacts:\n" + str(address_book)
+    return str(address_book)
 
 
 @input_error
@@ -489,7 +413,6 @@ def normalize(name: str) -> str:
     new_name = re.sub(r'\W', '_', new_name)
     return f"{new_name}.{'.'.join(extension)}"
 
-
 def get_extensions(file_name):
     return Path(file_name).suffix[1:].upper()
 
@@ -503,7 +426,7 @@ def scan(folder):
             continue
 
         extension = get_extensions(file_name=item.name)
-        new_name = folder / item.name
+        new_name = folder/item.name
         if not extension:
             other.append(new_name)
         else:
@@ -606,30 +529,15 @@ def do_sort_folder(*args):
     print(f"unknowns extensions: {[normalize(ext) for ext in unknown]}")
     print(f"unique extensions: {[normalize(ext) for ext in extensions]}")
 
-
 address_book = AddressBook()
 
 
-@input_error
 def main():
+
     print(func_help())
 
     # load data from disk if data is available
     address_book.load_data_from_disk()
-
-    r1 = Record("Jack", "0987654333", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
-    record = Record("Joo", "0987654321", "15.01.1990", None, "st. Qwerty 444")
-    address_book.add_record(r1)
-    address_book.add_record(record)
-    print("record", record)
-    print(type(record))
-    print("address_book", address_book)
-    print(type(address_book))
-
-    print("--------------------------")
-    for val in address_book.values():
-        print(val)
-    print("--------------------------")
 
     while True:
         user_input = input('Please, enter the valid command: ')
@@ -640,7 +548,6 @@ def main():
             break
         else:
             handler, arguments = parser(user_input)
-            print("arguments: ", arguments)
             print(handler(*arguments))
 
 
