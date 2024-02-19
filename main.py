@@ -205,18 +205,18 @@ class Record:
 
 
 class AddressBook(UserDict):
-    def __iter__(self, n=1):
-        self.n = n
-        self.count = 0
-        return self
-
-    def __next__(self):
-        self.count += 1
-        if self.count > self.n:
-            raise StopIteration
-        else:
-            for i in self.data:
-                yield self.data[i]
+    # def __iter__(self, n=1):
+    #     self.n = n
+    #     self.count = 0
+    #     return self
+    #
+    # def __next__(self):
+    #     self.count += 1
+    #     if self.count > self.n:
+    #         raise StopIteration
+    #     else:
+    #         for i in self.data:
+    #             yield self.data[i]
 
     def search_contact(self, query):
         matching_contacts = list()
