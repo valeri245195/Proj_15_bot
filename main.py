@@ -732,6 +732,7 @@ COMMANDS = {
     "Exit": func_exit,
     "Close": func_exit,
     "Good Bye": func_exit,
+    "Days to birthday": days_to_birthday
 }
 
 
