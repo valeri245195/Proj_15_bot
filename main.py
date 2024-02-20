@@ -230,40 +230,41 @@ def input_error(func):
 
 notes = []
 def add_note():
-    title = input("Введіть заголовок нотатки: ")
-    content = input("Введіть текст нотатки: ")
-    tags = input("Введіть теги (розділіть їх комами): ").split(', ')
+    title = input("Enter the note title: ")
+    content = input("Enter the note text: ")
+    tags = input("Enter tags (separate them with commas): ").split(', ')
 
     note = {'title': title, 'content': content, 'tags': tags}
     notes.append(note)
-    print("Нотатка успішно додана!")
+    print("Note successfully added!")
 
 
 def view_notes():
     if not notes:
-        print("Немає доступних нотаток.")
+        print("No available notes.")
         return
 
     for i, note in enumerate(notes):
-        print(f"\nНотатка {i + 1}:")
-        print(f"Заголовок: {note['title']}")
-        print(f"Текст: {note['content']}")
-        print(f"Теги: {', '.join(note['tags'])}")
+        print(f"\nNote {i + 1}:")
+        print(f"Title: {note['title']}")
+        print(f"Text: {note['content']}")
+        print(f"Tags: {', '.join(note['tags'])}")
 
 
 def search_by_tag():
-    tag_to_search = input("Введіть тег для пошуку: ")
+    tag_to_search = input("Enter the tag to search for: ")
     matching_notes = [note for note in notes if tag_to_search.lower() in map(str.lower, note['tags'])]
 
     if matching_notes:
-        print(f"\nЗнайдені нотатки за тегом '{tag_to_search}':")
+        print(f"\nFound notes with tag '{tag_to_search}':")
         for i, note in enumerate(matching_notes):
-            print(f"\nНотатка {i + 1}:")
-            print(f"Заголовок: {note['title']}")
-            print(f"Текст: {note['content']}")
-            print(f"Теги: {', '.join(note['tags'])}")
+            print(f"\nNote {i + 1}:")
+            print(f"Title: {note['title']}")
+            print(f"Text: {note['content']}")
+            print(f"Tags: {', '.join(note['tags'])}")
     else:
-        print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
+        print(f"No notes found with tag '{tag_to_search}'.")
+
 
 @input_error
 def func_search_contacts(*args):
