@@ -157,20 +157,33 @@ class Record:
         self.email = Email(email)
         self.address = Address(address)
 
-    def days_to_birthday(self, current_date=None):
-        if not current_date:
-            current_date = datetime.now().date()
+   def days_to_birthday(birthday):
+    # Перевірка чи введено дату народження
+    if birthday:
+        # Отримання поточної дати
+        today = datetime.now().date()
 
-        if self.birthday:
-            next_birthday = datetime.strptime(str(self.birthday), '%d.%m.%Y').date().replace(year=current_date.year)
+        # Визначення року наступного дня народження
+        next_birthday_year = today.year
 
-            if current_date > next_birthday:
-                next_birthday = next_birthday.replace(year=current_date.year + 1)
+        # Перетворення рядка з датою народження у об'єкт datetime.date
+        # заміна року на поточний та перевірка на коректність коду
+        try:
+            birthday_this_year = datetime.strptime(birthday, '%Y-%m-%d').date().replace(year=next_birthday_year)
+        except:
+            return 'Date of birth entered incorrectly'
+        # Якщо день народження вже пройшов у поточному році, перенесення його на наступний рік
+        if today > birthday_this_year:
+            next_birthday_year += 1
+            birthday_this_year = birthday_this_year.replace(year=next_birthday_year)
 
-            days_remaining = (next_birthday - current_date).days
-            return f"Days till the next Birthday for {self.name}: {days_remaining} days"
-        else:
-            return "Birth date not added"
+        # Обчислення кількості днів до наступного дня народження
+        days_left = (birthday_this_year - today).days
+
+        return days_left
+    else:
+        # Повернення значення None, якщо дата народження не була введена
+        return  'Date of birth entered incorrectly'
 
     def add_phone(self, phone):
         self.phones.append(Phone(phone))
