@@ -6,6 +6,9 @@ import pickle as p
 from datetime import datetime
 from collections import UserDict
 
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
 TRANSLATION = (
     "a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t",
@@ -358,51 +361,6 @@ def is_valid_birthday(value):
 
 
 @input_error
-def func_help():
-    return ('Hi! If you want to start working, just enter "hello"\n' +
-            'Number phone in 10 numbers, for example 0001230001\n' +
-            'The representation of all commands looks as follows:\n' +
-            '"hello" - start work with bot\n' +
-            '"add n" name phone1 phone2 ...\n' +
-            '"add email" name example@mail.com ...\n' +
-            '"add adr" name West 141 st. ...\n' +
-            '"add brd" name 15.12.1990 ...\n' +
-            '"change" name old_phone new_phone\n' +
-            '"phone" name\n' +
-            '"show all" - for show all information\n' +
-            '"good bye", "close", "exit" - for end work\n' +
-            '"delete" - delete info of name\n' +
-            '"search" - command for search. Just enter "search" and something about contact like name or phone')
-
-
-@input_error
-def parser(user_input: str):
-    COMMANDS = {
-        "Help": func_help,
-        "Hello": func_hello,
-        "Add n": func_add_name_phones,
-        "Add Email": func_add_email,
-        "Add Adr": func_add_address,
-        "Add brd": func_add_birthday,
-        "Change ": func_change,
-        "Phone ": func_search,
-        "Show All": func_show_all,
-        "Delete ": func_delete,
-        "Search ": func_search_contacts,
-        "Sort ": do_sort_folder,
-    }
-
-    user_input = user_input.title()
-
-    for kw, command in COMMANDS.items():
-        if user_input.startswith(kw.title()):
-            args = user_input[len(kw):].strip().split()
-            print("1args: ", args)
-            return command, args
-    return func_unknown_command, []
-
-
-@input_error
 def func_add_name_phones(name, *phone_numbers):  # function for add name and phone
     if not address_book.find(name):
         record = Record(name)
@@ -497,8 +455,8 @@ def func_hello():
     return "How can I help you?"
 
 
-@input_error
-def func_quit():
+def func_exit():
+    address_book.save_data_to_disk()
     return "Good bye!"
 
 
@@ -626,7 +584,57 @@ def do_sort_folder(*args):
     print(f"unique extensions: {[normalize(ext) for ext in extensions]}")
 
 
+@input_error
+def func_help():
+    return ('Hi! If you want to start working, just enter "hello"\n' +
+            'Number phone in 10 numbers, for example 0001230001\n' +
+            'The representation of all commands looks as follows:\n' +
+            '"hello" - start work with bot\n' +
+            '"add n" name phone1 phone2 ...\n' +
+            '"add email" name example@mail.com ...\n' +
+            '"add adr" name West 141 st. ...\n' +
+            '"add brd" name 15.12.1990 ...\n' +
+            '"change" name old_phone new_phone\n' +
+            '"phone" name\n' +
+            '"show all" - for show all information\n' +
+            '"good bye", "close", "exit" - for end work\n' +
+            '"delete" - delete info of name\n' +
+            '"search" - command for search. Just enter "search" and something about contact like name or phone')
+
+
+COMMANDS = {
+    "Help": func_help,
+    "Hello": func_hello,
+    "Add N": func_add_name_phones,
+    "Add Email": func_add_email,
+    "Add Adr": func_add_address,
+    "Add Brd": func_add_birthday,
+    "Change ": func_change,
+    "Phone ": func_search,
+    "Show All": func_show_all,
+    "Delete ": func_delete,
+    "Search ": func_search_contacts,
+    "Sort ": do_sort_folder,
+    "Exit": func_exit,
+    "Close": func_exit,
+    "Good Bye": func_exit,
+}
+
+
+@input_error
+def parser(user_input: str):
+    user_input = user_input.title()
+
+    for kw, command in COMMANDS.items():
+        if user_input.startswith(kw.title()):
+            args = user_input[len(kw):].strip().split()
+            return command, args
+    return func_unknown_command, []
+
+
 address_book = AddressBook()
+
+command_completer = WordCompleter(COMMANDS, ignore_case=True)
 
 
 @input_error
@@ -643,10 +651,12 @@ def main():
 
     while True:
         user_input = input('Please, enter the valid command: ')
+        # ЗАПУСКАЙТЕ ЧЕРЕЗ TERMINAL: python maim.py
+        # АБО відкоментуйте рядок вище, закоментуйте нижче для виключення prompt та запуску в IDLE
+        # user_input = prompt("Please, enter the valid command: : ", completer=command_completer)
 
         if user_input.lower() in ["exit", "close", "good bye"]:
-            address_book.save_data_to_disk()
-            print(func_quit())
+            print(func_exit())
             break
         else:
             handler, arguments = parser(user_input)
