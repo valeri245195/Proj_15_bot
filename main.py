@@ -160,20 +160,34 @@ class Record:
         self.email = Email(email)
         self.address = Address(address)
 
-    def days_to_birthday(self, current_date=None):
-        if not current_date:
-            current_date = datetime.now().date()
 
-        if self.birthday:
-            next_birthday = datetime.strptime(str(self.birthday), '%d.%m.%Y').date().replace(year=current_date.year)
+    def days_to_birthday(birthday):
+        # Перевірка чи введено дату народження
+        if birthday:
+            # Отримання поточної дати
+            today = datetime.now().date()
 
-            if current_date > next_birthday:
-                next_birthday = next_birthday.replace(year=current_date.year + 1)
+            # Визначення року наступного дня народження
+            next_birthday_year = today.year
 
-            days_remaining = (next_birthday - current_date).days
-            return f"Days till the next Birthday for {self.name}: {days_remaining} days"
+            # Перетворення рядка з датою народження у об'єкт datetime.date
+            # заміна року на поточний та перевірка на коректність коду
+            try:
+                birthday_this_year = datetime.strptime(birthday, '%Y-%m-%d').date().replace(year=next_birthday_year)
+            except:
+                return 'Date of birth entered incorrectly'
+            # Якщо день народження вже пройшов у поточному році, перенесення його на наступний рік
+            if today > birthday_this_year:
+                next_birthday_year += 1
+                birthday_this_year = birthday_this_year.replace(year=next_birthday_year)
+
+            # Обчислення кількості днів до наступного дня народження
+            days_left = (birthday_this_year - today).days
+
+            return days_left
         else:
-            return "Birth date not added"
+            # Повернення значення None, якщо дата народження не була введена
+            return 'Date of birth entered incorrectly'
 
     def add_phone(self, phone):
         self.phones.append(Phone(phone))
@@ -358,6 +372,106 @@ def is_valid_birthday(value):
             return False
     else:
         return False
+
+@input_error
+def func_change_info(name, info_type, *args):
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        old_phone, new_phone = args
+        return record.edit_phone(old_phone, new_phone)
+    
+    elif info_type.lower() == 'email':
+        new_email = args[0]
+        record.email = new_email
+        address_book.add_record(record)
+        return f"Email for '{name}' changed to '{new_email}'."
+    
+    elif info_type.lower() == 'birthday':
+        new_birthday = args[0]
+        record.birthday.value = new_birthday
+        address_book.add_record(record)
+        return f"Birthday for '{name}' changed to '{new_birthday}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+        
+@input_error
+def func_delete_info(name, info_type, *args):
+    
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        phone_to_delete = ' '.join(args) 
+        print("Phone to delete:", phone_to_delete)
+        try:
+            record.remove_phone(phone_to_delete)
+            address_book.add_record(record)
+            return f"Phone number '{phone_to_delete}' deleted for '{name}'."
+        except ValueError:
+            return f"Phone number '{phone_to_delete}' not found for '{name}'."
+    
+    elif info_type.lower() == 'email':
+        record.email = None
+        address_book.add_record(record)
+        return f"Email deleted for '{name}'."
+    
+    elif info_type.lower() == 'birthday':
+        record.birthday = None
+        address_book.add_record(record)
+        return f"Birthday deleted for '{name}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+
+
+@input_error
+def func_help():
+    return ('Hi! If you want to start working, just enter "hello"\n' +
+            'Number phone in 10 numbers, for example 0001230001\n' +
+            'The representation of all commands looks as follows:\n' +
+            '"hello" - start work with bot\n' +
+            '"add n" name phone1 phone2 ...\n' +
+            '"add email" name example@mail.com ...\n' +
+            '"add adr" name West 141 st. ...\n' +
+            '"add brd" name 15.12.1990 ...\n' +
+            '"change" name old_phone new_phone\n' +
+            '"phone" name\n' +
+            '"show all" - for show all information\n' +
+            '"good bye", "close", "exit" - for end work\n' +
+            '"delete" - delete info of name\n' +
+            '"search" - command for search. Just enter "search" and something about contact like name or phone')
+
+
+@input_error
+def parser(user_input: str):
+    COMMANDS = {
+        "Help": func_help,
+        "Hello": func_hello,
+        "Add n": func_add_name_phones,
+        "Add Email": func_add_email,
+        "Add Adr": func_add_address,
+        "Add brd": func_add_birthday,
+        "Change": func_change_info,
+        "Phone ": func_search,
+        "Show All": func_show_all,
+        "Delete": func_delete_info,
+        "Search ": func_search_contacts,
+        "Sort ": do_sort_folder,
+    }
+
+    user_input = user_input.title()
+
+    for kw, command in COMMANDS.items():
+        if user_input.startswith(kw.title()):
+            args = user_input[len(kw):].strip().split()
+            print("1args: ", args)
+            return command, args
+    return func_unknown_command, []
 
 
 @input_error
