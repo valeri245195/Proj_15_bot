@@ -6,6 +6,9 @@ import pickle as p
 from datetime import datetime
 from collections import UserDict
 
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
+
 UKRAINIAN_SYMBOLS = 'абвгдеєжзиіїйклмнопрстуфхцчшщьюя'
 TRANSLATION = ("a", "b", "v", "g", "d", "e", "je", "zh", "z", "y", "i", "ji", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
                "f", "h", "ts", "ch", "sh", "sch", "", "ju", "ja")
@@ -67,7 +70,7 @@ class Birthday(Field):
             new_value = datetime(day=int(day), month=int(month), year=int(year))
             self.__value = new_value
         else:
-            raise ValueError
+            raise ValueError("Invalid value birthday")
 
     def __repr__(self):
         return f'{self.value.strftime("%d %B %Y")}'
@@ -145,6 +148,36 @@ class Record:
         return None
 
   
+
+
+    def days_to_birthday(birthday):
+        # Перевірка чи введено дату народження
+        if birthday:
+            # Отримання поточної дати
+            today = datetime.now().date()
+
+            # Визначення року наступного дня народження
+            next_birthday_year = today.year
+
+            # Перетворення рядка з датою народження у об'єкт datetime.date
+            # заміна року на поточний та перевірка на коректність коду
+            try:
+                birthday_this_year = datetime.strptime(birthday, '%Y-%m-%d').date().replace(year=next_birthday_year)
+            except:
+                return 'Date of birth entered incorrectly'
+            # Якщо день народження вже пройшов у поточному році, перенесення його на наступний рік
+            if today > birthday_this_year:
+                next_birthday_year += 1
+                birthday_this_year = birthday_this_year.replace(year=next_birthday_year)
+
+            # Обчислення кількості днів до наступного дня народження
+            days_left = (birthday_this_year - today).days
+
+            return days_left
+        else:
+            # Повернення значення None, якщо дата народження не була введена
+            return 'Date of birth entered incorrectly'
+
 
     def add_phone(self, phone):
         self.phones.append(Phone(phone))
@@ -244,42 +277,43 @@ def input_error(func):
 
     return inner
 
-
+notes = []
 def add_note():
-    title = input("Введіть заголовок нотатки: ")
-    content = input("Введіть текст нотатки: ")
-    tags = input("Введіть теги (розділіть їх комами): ").split(', ')
+    title = input("Enter the note title: ")
+    content = input("Enter the note text: ")
+    tags = input("Enter tags (separate them with commas): ").split(', ')
 
     note = {'title': title, 'content': content, 'tags': tags}
     notes.append(note)
-    print("Нотатка успішно додана!")
+    print("Note successfully added!")
 
 
 def view_notes():
     if not notes:
-        print("Немає доступних нотаток.")
+        print("No available notes.")
         return
 
     for i, note in enumerate(notes):
-        print(f"\nНотатка {i + 1}:")
-        print(f"Заголовок: {note['title']}")
-        print(f"Текст: {note['content']}")
-        print(f"Теги: {', '.join(note['tags'])}")
+        print(f"\nNote {i + 1}:")
+        print(f"Title: {note['title']}")
+        print(f"Text: {note['content']}")
+        print(f"Tags: {', '.join(note['tags'])}")
 
 
 def search_by_tag():
-    tag_to_search = input("Введіть тег для пошуку: ")
+    tag_to_search = input("Enter the tag to search for: ")
     matching_notes = [note for note in notes if tag_to_search.lower() in map(str.lower, note['tags'])]
 
     if matching_notes:
-        print(f"\nЗнайдені нотатки за тегом '{tag_to_search}':")
+        print(f"\nFound notes with tag '{tag_to_search}':")
         for i, note in enumerate(matching_notes):
-            print(f"\nНотатка {i + 1}:")
-            print(f"Заголовок: {note['title']}")
-            print(f"Текст: {note['content']}")
-            print(f"Теги: {', '.join(note['tags'])}")
+            print(f"\nNote {i + 1}:")
+            print(f"Title: {note['title']}")
+            print(f"Text: {note['content']}")
+            print(f"Tags: {', '.join(note['tags'])}")
     else:
-        print(f"Нотаток з тегом '{tag_to_search}' не знайдено.")
+        print(f"No notes found with tag '{tag_to_search}'.")
+
 
 @input_error
 def func_search_contacts(*args):
@@ -318,6 +352,61 @@ def is_valid_birthday(value):
     else:
         return False
 
+@input_error
+def func_change_info(name, info_type, *args):
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        old_phone, new_phone = args
+        return record.edit_phone(old_phone, new_phone)
+    
+    elif info_type.lower() == 'email':
+        new_email = args[0]
+        record.email = new_email
+        address_book.add_record(record)
+        return f"Email for '{name}' changed to '{new_email}'."
+    
+    elif info_type.lower() == 'birthday':
+        new_birthday = args[0]
+        record.birthday.value = new_birthday
+        address_book.add_record(record)
+        return f"Birthday for '{name}' changed to '{new_birthday}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+        
+@input_error
+def func_delete_info(name, info_type, *args):
+    
+    record = address_book.find(name)
+    if not record:
+        return f"Contact '{name}' not found."
+    
+    if info_type.lower() == 'phone':
+        phone_to_delete = ' '.join(args) 
+        print("Phone to delete:", phone_to_delete)
+        try:
+            record.remove_phone(phone_to_delete)
+            address_book.add_record(record)
+            return f"Phone number '{phone_to_delete}' deleted for '{name}'."
+        except ValueError:
+            return f"Phone number '{phone_to_delete}' not found for '{name}'."
+    
+    elif info_type.lower() == 'email':
+        record.email = None
+        address_book.add_record(record)
+        return f"Email deleted for '{name}'."
+    
+    elif info_type.lower() == 'birthday':
+        record.birthday = None
+        address_book.add_record(record)
+        return f"Birthday deleted for '{name}'."
+    
+    else:
+        return f"Invalid information type: {info_type}."
+
 
 @input_error
 def func_help():
@@ -325,30 +414,53 @@ def func_help():
             'Number phone in 10 numbers, for example 0001230001\n' +
             'The representation of all commands looks as follows:\n' +
             '"hello" - start work with bot\n' +
+
             '"add" name phone\n' +
+
+            '"add n" name phone1 phone2 ...\n' +
+            '"add email" name example@mail.com ...\n' +
+            '"add adr" name West 141 st. ...\n' +
+            '"add brd" name 15.12.1990 ...\n' +
+
             '"change" name old_phone new_phone\n' +
             '"phone" name\n' +
             '"show all" - for show all information\n' +
             '"good bye", "close", "exit" - for end work\n' +
             '"delete" - delete info of name\n' +
-            '"search" - command for search. Just enter "search" and something about contact like name or phone')
+            '"search" - command for search. Just enter "search" and something about contact like name or phone\n' +
+            '"create note" - command for creating note\n' +
+            '"search by tag" - command for searching note by tag\n' +
+            '"show notes" - command for show all available notes\n')
 
 
 @input_error
 def parser(user_input: str):
     COMMANDS = {
         "Hello": func_hello,
+
         "Add ": func_add,
         "Change ": func_change,
         "Phone ": func_search,
         "Show All": func_show_all,
         "Delete ": func_delete,
+        "Search By Tag": search_by_tag,
+
+        "Add n": func_add_name_phones,
+        "Add Email": func_add_email,
+        "Add Adr": func_add_address,
+        "Add brd": func_add_birthday,
+        "Change": func_change_info,
+        "Phone ": func_search,
+        "Show All": func_show_all,
+        "Delete": func_delete_info,
+
         "Search ": func_search_contacts,
         "Sort ": do_sort_folder,
+        "Create Note": add_note,
+        "Show Notes": view_notes,
     }
 
     user_input = user_input.title()
-
     for kw, command in COMMANDS.items():
         if user_input.startswith(kw):
             return command, user_input[len(kw):].strip().split()
@@ -367,7 +479,46 @@ def func_add(*args): # function for add name and phone
 
 
 @input_error
+
 def func_change(*args): # func for change pfone
+
+def func_add_email(name, email):  # function for add email
+    if not address_book.find(name):
+        record = Record(name, email=email)
+    else:
+        record = address_book.find(name)
+
+    record.email = email
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+
+def func_add_birthday(name, birthday):
+    if not address_book.find(name):
+        record = Record(name, birthday=birthday)
+    else:
+        record = address_book.find(name)
+        record.birthday = Birthday(birthday)
+
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+
+@input_error
+def func_add_address(name, *address):  # function for add address
+    if not address_book.find(name):
+        record = Record(name, address=address)
+    else:
+        record = address_book.find(name)
+        record.address = list(address)
+
+    address_book.add_record(record)
+    return "Info saved successfully."
+
+
+@input_error
+def func_change(*args):  # func for change pfone
+
     for k, v in address_book.items():
         if k == args[0]:
             rec = address_book[args[0]]
@@ -413,8 +564,8 @@ def func_hello():
     return "How can I help you?"
 
 
-@input_error
-def func_quit():
+def func_exit():
+    address_book.save_data_to_disk()
     return "Good bye!"
 
 
@@ -540,7 +691,60 @@ def do_sort_folder(*args):
     print(f"unknowns extensions: {[normalize(ext) for ext in unknown]}")
     print(f"unique extensions: {[normalize(ext) for ext in extensions]}")
 
+
+@input_error
+def func_help():
+    return ('Hi! If you want to start working, just enter "hello"\n' +
+            'Number phone in 10 numbers, for example 0001230001\n' +
+            'The representation of all commands looks as follows:\n' +
+            '"hello" - start work with bot\n' +
+            '"add n" name phone1 phone2 ...\n' +
+            '"add email" name example@mail.com ...\n' +
+            '"add adr" name West 141 st. ...\n' +
+            '"add brd" name 15.12.1990 ...\n' +
+            '"change" name old_phone new_phone\n' +
+            '"phone" name\n' +
+            '"show all" - for show all information\n' +
+            '"good bye", "close", "exit" - for end work\n' +
+            '"delete" - delete info of name\n' +
+            '"search" - command for search. Just enter "search" and something about contact like name or phone')
+
+
+COMMANDS = {
+    "Help": func_help,
+    "Hello": func_hello,
+    "Add N": func_add_name_phones,
+    "Add Email": func_add_email,
+    "Add Adr": func_add_address,
+    "Add Brd": func_add_birthday,
+    "Change ": func_change,
+    "Phone ": func_search,
+    "Show All": func_show_all,
+    "Delete ": func_delete,
+    "Search ": func_search_contacts,
+    "Sort ": do_sort_folder,
+    "Exit": func_exit,
+    "Close": func_exit,
+    "Good Bye": func_exit,
+    "Days to birthday": days_to_birthday
+}
+
+
+@input_error
+def parser(user_input: str):
+    user_input = user_input.title()
+
+    for kw, command in COMMANDS.items():
+        if user_input.startswith(kw.title()):
+            args = user_input[len(kw):].strip().split()
+            return command, args
+    return func_unknown_command, []
+
+
+
 address_book = AddressBook()
+
+command_completer = WordCompleter(COMMANDS, ignore_case=True)
 
 
 def main():
@@ -550,12 +754,20 @@ def main():
     # load data from disk if data is available
     address_book.load_data_from_disk()
 
+
+    r1 = Record("Jack", "0987654333", "15.01.2000", "jack.123@gmail.com", "st. Qwerty 156")
+    record = Record("Joo", "0987654321", "15.01.1990", None, "st. Qwerty 444")
+    address_book.add_record(r1)
+    address_book.add_record(record)
+
     while True:
         user_input = input('Please, enter the valid command: ')
+        # ЗАПУСКАЙТЕ ЧЕРЕЗ TERMINAL: python maim.py
+        # АБО відкоментуйте рядок вище, закоментуйте нижче для виключення prompt та запуску в IDLE
+        # user_input = prompt("Please, enter the valid command: : ", completer=command_completer)
 
         if user_input.lower() in ["exit", "close", "good bye"]:
-            address_book.save_data_to_disk()
-            print(func_quit())
+            print(func_exit())
             break
         else:
             handler, arguments = parser(user_input)
